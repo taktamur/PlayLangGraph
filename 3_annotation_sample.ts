@@ -1,25 +1,9 @@
 // deno run --allow-write --allow-env --allow-net tmp/3_annotation_sample.ts
 
 // Annotationを使った最新のLangGraphサンプル
-// channelsを使わない推奨方法
+// Annotationを使うことで、結果の型推論が効くようになるので、zodが不要になる
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
-import { writeFileSync } from "node:fs";
-// import { number, z } from "zod";
-
-// ZodスキーマでAnnotationの型を定義
-// const LoopStateSchema = z.object({
-//   counter: z.number(),
-//   target: z.number(),
-//   iterations: z.number(),
-//   messages: z.array(z.string()),
-// });
-// type LoopState = z.infer<typeof LoopStateSchema>;
-// type LoopState = {
-//   counter: number; // カウンター
-//   target: number; // 目標値
-//   iterations: number; // 実行回数
-//   messages: string[]; // 実行履歴メッセージ
-// };
+import { saveGraphAsPng } from "./lib/graph-utils.ts";
 
 // Annotationを使った状態定義（最新の推奨方法）
 const LoopAnnotation = Annotation.Root({
@@ -104,7 +88,7 @@ async function main() {
 
   // 初期状態を設定
   const initialState: LoopState = {
-    counter: 0,
+    counter: 3,
     target: 5,
     iterations: 0,
     messages: [],
@@ -119,13 +103,6 @@ async function main() {
   // グラフを実行
   const result = await app.invoke(initialState);
 
-  // Zodによる型チェック
-  // const parseResult = LoopStateSchema.safeParse(result);
-  // if (!parseResult.success) {
-  //   console.error("resultがLoopState型ではありません:", parseResult.error);
-  //   throw new Error("型チェック失敗");
-  // }
-
   // Annotation.Rootを使うことで、型推論が効くようになる
   console.log("---");
   console.log("最終結果:");
@@ -138,15 +115,7 @@ async function main() {
   });
 
   // PNG画像として保存
-  try {
-    const graph = await app.getGraphAsync();
-    const image = await graph.drawMermaidPng();
-    const arrayBuffer = await image.arrayBuffer();
-    writeFileSync("3_annotation.png", new Uint8Array(arrayBuffer));
-    console.log("\nグラフ画像を tmp/3_annotation.png として保存しました");
-  } catch (error) {
-    console.error("画像保存エラー:", error);
-  }
+  await saveGraphAsPng(app, "3_annotation");
 }
 
 if (import.meta.main) {
