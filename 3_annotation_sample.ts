@@ -142,7 +142,7 @@ async function main() {
     const graph = await app.getGraphAsync();
     const image = await graph.drawMermaidPng();
     const arrayBuffer = await image.arrayBuffer();
-    writeFileSync("tmp/3_annotation.png", new Uint8Array(arrayBuffer));
+    writeFileSync("3_annotation.png", new Uint8Array(arrayBuffer));
     console.log("\nグラフ画像を tmp/3_annotation.png として保存しました");
   } catch (error) {
     console.error("画像保存エラー:", error);
