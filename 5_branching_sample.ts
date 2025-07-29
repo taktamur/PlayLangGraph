@@ -17,14 +17,21 @@ const BranchingAnnotation = Annotation.Root({
 type BranchingState = typeof BranchingAnnotation.State;
 
 // 入力を分析して種類を判定するノード
+// エッジケースに対応した数値検証関数
+function isValidNumber(input: string): boolean {
+  const trimmed = input.trim();
+  // 空文字、スペースのみ、Infinity、NaNを除外
+  return trimmed !== "" && !isNaN(Number(trimmed)) && isFinite(Number(trimmed));
+}
+
 function analyzeInputNode(state: BranchingState): Partial<BranchingState> {
   const input = state.input.trim();
   let inputType: "number" | "text" | "unknown";
 
   console.log(`入力分析中: "${input}"`);
 
-  // 数値かどうかを判定
-  if (!isNaN(Number(input)) && input !== "") {
+  // エッジケースに対応した数値判定
+  if (isValidNumber(input)) {
     inputType = "number";
   } else if (input.length > 0) {
     inputType = "text";
