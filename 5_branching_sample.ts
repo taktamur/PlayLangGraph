@@ -1,4 +1,4 @@
-// deno run --allow-write --allow-env --allow-net 4_branching_sample.ts
+// deno run --allow-write --allow-env --allow-net 5_branching_sample.ts
 
 // 分岐処理を行うLangGraphサンプル
 // 入力の種類に応じて異なる処理パスを選択する
@@ -20,9 +20,9 @@ type BranchingState = typeof BranchingAnnotation.State;
 function analyzeInputNode(state: BranchingState): Partial<BranchingState> {
   const input = state.input.trim();
   let inputType: "number" | "text" | "unknown";
-  
+
   console.log(`入力分析中: "${input}"`);
-  
+
   // 数値かどうかを判定
   if (!isNaN(Number(input)) && input !== "") {
     inputType = "number";
@@ -31,10 +31,10 @@ function analyzeInputNode(state: BranchingState): Partial<BranchingState> {
   } else {
     inputType = "unknown";
   }
-  
+
   const logMessage = `入力種別を判定: ${inputType}`;
   console.log(logMessage);
-  
+
   return {
     inputType,
     processLog: [...state.processLog, logMessage],
@@ -46,9 +46,9 @@ function processNumberNode(state: BranchingState): Partial<BranchingState> {
   const number = Number(state.input);
   const result = number * number; // 平方を計算
   const logMessage = `数値処理: ${number} → ${result} (平方計算)`;
-  
+
   console.log(logMessage);
-  
+
   return {
     numberResult: result,
     processLog: [...state.processLog, logMessage],
@@ -60,9 +60,9 @@ function processTextNode(state: BranchingState): Partial<BranchingState> {
   const text = state.input;
   const result = text.split("").reverse().join(""); // 文字列を逆順に
   const logMessage = `テキスト処理: "${text}" → "${result}" (逆順変換)`;
-  
+
   console.log(logMessage);
-  
+
   return {
     textResult: result,
     processLog: [...state.processLog, logMessage],
@@ -72,9 +72,9 @@ function processTextNode(state: BranchingState): Partial<BranchingState> {
 // 不明な入力の処理パス
 function processUnknownNode(state: BranchingState): Partial<BranchingState> {
   const logMessage = "未知の入力: 処理をスキップしました";
-  
+
   console.log(logMessage);
-  
+
   return {
     processLog: [...state.processLog, logMessage],
   };
@@ -83,13 +83,15 @@ function processUnknownNode(state: BranchingState): Partial<BranchingState> {
 // 最終結果をまとめるノード
 function summarizeResultNode(state: BranchingState): Partial<BranchingState> {
   let finalMessage: string;
-  
+
   switch (state.inputType) {
     case "number":
-      finalMessage = `数値処理完了: ${state.input} の平方は ${state.numberResult} です`;
+      finalMessage =
+        `数値処理完了: ${state.input} の平方は ${state.numberResult} です`;
       break;
     case "text":
-      finalMessage = `テキスト処理完了: "${state.input}" を逆順にした結果は "${state.textResult}" です`;
+      finalMessage =
+        `テキスト処理完了: "${state.input}" を逆順にした結果は "${state.textResult}" です`;
       break;
     case "unknown":
       finalMessage = "入力が不明のため、処理を実行できませんでした";
@@ -97,11 +99,11 @@ function summarizeResultNode(state: BranchingState): Partial<BranchingState> {
     default:
       finalMessage = "予期しないエラーが発生しました";
   }
-  
+
   const logMessage = "結果をまとめました";
   console.log(logMessage);
   console.log(finalMessage);
-  
+
   return {
     finalMessage,
     processLog: [...state.processLog, logMessage],
@@ -109,9 +111,11 @@ function summarizeResultNode(state: BranchingState): Partial<BranchingState> {
 }
 
 // 分岐の判定関数
-function decideBranchPath(state: BranchingState): "processNumber" | "processText" | "processUnknown" {
+function decideBranchPath(
+  state: BranchingState,
+): "processNumber" | "processText" | "processUnknown" {
   console.log(`分岐判定: ${state.inputType} パスを選択`);
-  
+
   switch (state.inputType) {
     case "number":
       return "processNumber";
@@ -125,13 +129,6 @@ function decideBranchPath(state: BranchingState): "processNumber" | "processText
 // StateGraphをAnnotationで作成
 const workflow = new StateGraph(BranchingAnnotation);
 
-// ノードを追加
-workflow.addNode("analyzeInput", analyzeInputNode);
-workflow.addNode("processNumber", processNumberNode);
-workflow.addNode("processText", processTextNode);
-workflow.addNode("processUnknown", processUnknownNode);
-workflow.addNode("summarizeResult", summarizeResultNode);
-
 // 型推論に失敗するNODE名称を定数化
 // deno-lint-ignore no-explicit-any
 const NODE_ANALYZE = "analyzeInput" as any;
@@ -143,6 +140,13 @@ const NODE_PROCESS_TEXT = "processText" as any;
 const NODE_PROCESS_UNKNOWN = "processUnknown" as any;
 // deno-lint-ignore no-explicit-any
 const NODE_SUMMARIZE = "summarizeResult" as any;
+
+// ノードを追加
+workflow.addNode(NODE_ANALYZE, analyzeInputNode);
+workflow.addNode(NODE_PROCESS_NUMBER, processNumberNode);
+workflow.addNode(NODE_PROCESS_TEXT, processTextNode);
+workflow.addNode(NODE_PROCESS_UNKNOWN, processUnknownNode);
+workflow.addNode(NODE_SUMMARIZE, summarizeResultNode);
 
 // エッジを定義
 workflow.addEdge(START, NODE_ANALYZE);
@@ -172,7 +176,7 @@ const app = workflow.compile();
 // 複数のテストケースを実行する関数
 async function runTestCase(input: string, caseNumber: number) {
   console.log(`\n=== テストケース ${caseNumber}: "${input}" ===`);
-  
+
   // 初期状態を設定
   const initialState: BranchingState = {
     input,
@@ -182,10 +186,10 @@ async function runTestCase(input: string, caseNumber: number) {
     finalMessage: "",
     processLog: [],
   };
-  
+
   // グラフを実行
   const result = await app.invoke(initialState);
-  
+
   console.log("\n処理結果:");
   console.log(`- 入力: "${result.input}"`);
   console.log(`- 種別: ${result.inputType}`);
@@ -196,7 +200,7 @@ async function runTestCase(input: string, caseNumber: number) {
     console.log(`- テキスト結果: "${result.textResult}"`);
   }
   console.log(`- 最終メッセージ: ${result.finalMessage}`);
-  
+
   console.log("\n処理ログ:");
   result.processLog.forEach((log, index) => {
     console.log(`  ${index + 1}. ${log}`);
@@ -207,18 +211,18 @@ async function runTestCase(input: string, caseNumber: number) {
 async function main() {
   console.log("LangGraph 分岐処理サンプル開始");
   console.log("入力の種類に応じて異なる処理パスを実行します");
-  
+
   // 複数のテストケースを実行
-  await runTestCase("42", 1);      // 数値入力
-  await runTestCase("Hello", 2);   // テキスト入力
-  await runTestCase("", 3);        // 空入力
-  await runTestCase("3.14", 4);    // 小数点数
-  
+  await runTestCase("42", 1); // 数値入力
+  await runTestCase("Hello", 2); // テキスト入力
+  await runTestCase("", 3); // 空入力
+  await runTestCase("3.14", 4); // 小数点数
+
   console.log("\n" + "=".repeat(50));
   console.log("全テストケース完了");
-  
+
   // PNG画像として保存
-  await saveGraphAsPng(app, "4_branching");
+  await saveGraphAsPng(app, "5_branching");
 }
 
 if (import.meta.main) {
